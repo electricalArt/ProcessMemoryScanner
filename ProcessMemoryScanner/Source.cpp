@@ -11,11 +11,6 @@
 
 INITIALIZE_EASYLOGGINGPP
 
-DWORD64 ParseValue(std::string valueStr, std::string valueType, PDWORD pValueSize);
-void SearchProcessAddresses(
-    _In_ HANDLE process,
-    _In_ DWORD64 value,
-    _In_ DWORD valueSize);
 /*F+F+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   Function: FilterProcessAddresses()
 
@@ -36,6 +31,7 @@ void FilterProcessAddresses(
     _In_ HANDLE process,
     _In_ DWORD64 value,
     _In_ DWORD valueSize);
+
 /*F+F+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   Function: WriteProcessAddresses()
 
@@ -57,7 +53,34 @@ void WriteProcessAddresses(
     _In_ DWORD valueSize);
 
 /*F+F+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-  Summary:  It initializes the logger, check customer validtion and,
+  Function: SearchProcessAddresses()
+
+  Summary:  Searches for process addresses what point to specified value.
+            Found addresses will be written to the file.
+
+  Args:     _In_ HANDLE process,
+                The process where addresses are pointing.
+            _In_ DWORD64 value,
+                Value that addresses should point.
+            _In_ DWORD valueSize)
+                Value size.
+
+  Returns:  void
+-----------------------------------------------------------------F-F*/
+void SearchProcessAddresses(
+    _In_ HANDLE process,
+    _In_ DWORD64 value,
+    _In_ DWORD valueSize);
+
+DWORD64 ParseValue(
+    _In_ std::string valueStr,
+    _In_ std::string valueType,
+    _In_ PDWORD pValueSize);
+
+
+
+/*F+F+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  Summary:  It initializes the logger, 
             if everything is OK, starts `CheatLib` framework.
 
   Args:		ProcessMemoryScanner [<command>] <value> [<options>]
