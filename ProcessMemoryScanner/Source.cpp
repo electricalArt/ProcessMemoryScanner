@@ -5,7 +5,7 @@
 
 #define PRODUCT_NAME L"ProcessMemoryScanner"
 #define FILE_NAME L"addresses.txt"
-#define CHUNK_SIZE (SIZE_T)4096
+#define BUFF_SIZE (SIZE_T)(10'000 * 4096)
 #define USER_MODE_VM_MAX_ADDRESS (SIZE_T)0x7FFF'FFFFFFFF
 
 INITIALIZE_EASYLOGGINGPP
@@ -35,28 +35,58 @@ DWORD64 ParseValue(std::string valueStr, std::string valueType, PDWORD pValueSiz
 	return value;
 }
 
-void SearchProcessAddresses(HANDLE process, DWORD64 value, DWORD valueSize, FILE* file)
+void SearchProcessAddresses(const HANDLE process, const DWORD64 value, const DWORD valueSize, FILE* file)
 {
-	BYTE buff[CHUNK_SIZE] = { 0 };
+	// `buff` contains read memory
+	PBYTE buff = (PBYTE)VirtualAlloc(
+		NULL,
+		100 * BUFF_SIZE,
+		MEM_COMMIT | MEM_RESERVE,
+		PAGE_READWRITE);
+	//PBYTE buff[30 * BUFF_SIZE];
+	if (buff == NULL) {
+		throw std::runtime_error("Not enough memory");
+	}
 	MEMORY_BASIC_INFORMATION memoryInfo = { 0 };
-	for (SIZE_T i = 0x0; i < USER_MODE_VM_MAX_ADDRESS; i += CHUNK_SIZE) {
-		if (ReadProcessMemory(
-				process,
-				(LPCVOID)i,
-				&buff,
-    			CHUNK_SIZE,
-    			NULL)) {
-			LOG_N_TIMES(5, INFO) << "buff contains (as DWORD64): " << *(PDWORD64)buff;
-			for (SIZE_T buff_i = 0x0; buff_i < CHUNK_SIZE; buff_i += valueSize) {
-				if (memcmp(buff + buff_i, &value, valueSize) == 0) {
-					//LOG(INFO) << "Found: " << i + buff_i;
-					printf("Found: %p", i + buff_i);
-				}
-			}
+	SIZE_T i = 0x0;
+	SIZE_T buff_i = 0x0;
+
+	while (i < USER_MODE_VM_MAX_ADDRESS) {
+		if (VirtualQueryEx(
+    			process,
+    			(LPCVOID)i,
+    			&memoryInfo,
+    			sizeof(memoryInfo) ) == 0) {
+			break;
 		}
-		LOG_EVERY_N(500'000, INFO) << "Searching status: " << std::fixed << std::setprecision(2)
+		else if (memoryInfo.RegionSize >= BUFF_SIZE) {
+			LOG(WARNING) << "Found pages range with too big size: " << memoryInfo.RegionSize << ". Skipping it";
+		}
+		else if (memoryInfo.State == MEM_COMMIT) {
+			LOG(INFO) << "Region start: " << std::hex << memoryInfo.BaseAddress;
+			LOG(INFO) << "Region end: " << std::hex << (SIZE_T)memoryInfo.BaseAddress + memoryInfo.RegionSize;
+			LOG(INFO) << "Region size: " << std::dec << memoryInfo.RegionSize;
+			if (ReadProcessMemory(
+    				process,
+    				(LPCVOID)i,
+    				buff,
+    				memoryInfo.RegionSize,
+    				NULL)) {
+    			LOG_N_TIMES(5, INFO) << "buff contains (as DWORD64): " << *(PDWORD64)buff;
+    			for (buff_i = 0x0; buff_i < memoryInfo.RegionSize; buff_i += valueSize) {
+        			LOG_IF(buff_i >= BUFF_SIZE, FATAL) << "Buff length is not enough";
+    				if (memcmp(buff + buff_i, &value, valueSize) == 0) {
+    					//LOG(INFO) << "Found: " << i + buff_i;
+    					printf("Found: %p\n", (PVOID)(i + buff_i));
+   					}
+   				}
+    		}
+    	}
+		i += memoryInfo.RegionSize;
+		LOG_EVERY_N(100'000, INFO) << "Searching status: " << std::fixed << std::setprecision(2)
 			<< (FLOAT)i / USER_MODE_VM_MAX_ADDRESS << "%";
 	}
+	VirtualFree(buff, 0, MEM_RELEASE);
 }
 
 /*F+F+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
