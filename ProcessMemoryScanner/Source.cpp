@@ -77,7 +77,7 @@ DWORD64 ParseValue(
     _In_ std::string valueType,
     _In_ PDWORD pValueSize);
 
-
+void OutputFile();
 
 /*F+F+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   Summary:  It initializes the logger, 
@@ -136,7 +136,6 @@ int main(int argc, char* argv[])
             "int32",
             "int32 | int64 | float | double", cmd);
         cmd.parse(argc, argv);
-        TCLAP::CmdLineOutput cmdOutput();
 
         std::string command = commandArg.getValue();
         DWORD processId = processIdArg.getValue();
@@ -172,6 +171,8 @@ int main(int argc, char* argv[])
         else {
             throw TCLAP::ArgException("Invalid command");
         }
+
+        OutputFile();
     }
     catch (std::exception& ex) {
         std::cout << ex.what() << std::endl;
@@ -237,6 +238,9 @@ void SearchProcessAddresses(
                 LOG(WARNING) << "Found pages range with too big size: " << memoryInfo.RegionSize << ". Skipping it";
             }
             else {
+                LOG(INFO) << "Start of range:" << memoryInfo.BaseAddress;
+                LOG(INFO) << "End of range:" << (SIZE_T)memoryInfo.BaseAddress + memoryInfo.RegionSize;
+                LOG(INFO) << "Size of range:" << memoryInfo.BaseAddress;
                 if (ReadProcessMemory(
                     process,
                     (LPCVOID)i,
@@ -247,7 +251,7 @@ void SearchProcessAddresses(
                     for (SIZE_T buff_i = 0x0; buff_i < memoryInfo.RegionSize; buff_i += valueSize) {
                         LOG_IF(buff_i >= BUFF_SIZE, FATAL) << "Buff length is not enough";
                         if (memcmp(buff + buff_i, &value, valueSize) == 0) {
-                            LOG(INFO) << "Found: " << i + buff_i;
+                            LOG(INFO) << "Found: " << std::hex << i + buff_i;
                             fprintf(pFile, "%p\n", (PVOID)(i + buff_i));
                         }
                     }
@@ -261,6 +265,7 @@ void SearchProcessAddresses(
         i += memoryInfo.RegionSize;
     }
     VirtualFree(buff, 0, MEM_RELEASE);
+
     if (pFile)
         fclose(pFile);
 }
@@ -374,7 +379,10 @@ void WriteProcessAddresses(
         fclose(pFile);
 }
 
-DWORD64 ParseValue(std::string valueStr, std::string valueType, PDWORD pValueSize)
+DWORD64 ParseValue(
+    _In_ std::string valueStr,
+    _In_ std::string valueType,
+    _In_ PDWORD pValueSize)
 {
     DWORD64 value = 0;
     if (valueType == "int32") {
@@ -386,15 +394,34 @@ DWORD64 ParseValue(std::string valueStr, std::string valueType, PDWORD pValueSiz
         *pValueSize = sizeof(INT64);
     }
     else if (valueType == "float") {
-        value = (DWORD64)std::stof(valueStr);
+        FLOAT valueFloat = std::stof(valueStr);
+        memcpy(&value, &valueFloat, sizeof(FLOAT));
         *pValueSize = sizeof(FLOAT);
     }
     else if (valueType == "double") {
-        value = (DWORD64)std::stod(valueStr);
+        DOUBLE valueDouble = std::stod(valueStr);
+        memcpy(&value, &valueDouble, sizeof(DOUBLE));
         *pValueSize = sizeof(DOUBLE);
     }
     else {
         throw TCLAP::ArgParseException("--value-type");
     }
     return value;
+}
+
+void OutputFile()
+{
+    FILE* pFile = NULL;
+    
+    if (fopen_s(&pFile, FILE_NAME, "r")) {
+        throw std::runtime_error("Failed to open filter pFile");
+    }
+
+    CHAR line[512] = { 0 };
+    while (fscanf_s(pFile, "%s\n", line, 512) != EOF) {
+        printf("%s\n", line);
+    }
+    
+    if (pFile)
+        fclose(pFile);
 }
