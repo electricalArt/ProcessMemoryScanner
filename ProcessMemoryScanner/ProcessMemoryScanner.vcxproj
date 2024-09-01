@@ -112,7 +112,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\musli\ArtHome\Projects\SharedStuffLib\SharedStuffLib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\musli\ArtHome\Projects\MemoryHackerLib\MemoryHackerLib;C:\Users\musli\ArtHome\Projects\SharedStuffLib\SharedStuffLib</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <Optimization>Custom</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -136,7 +136,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);ELPP_NO_DEFAULT_LOG_FILE</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Users\musli\ArtHome\Projects\SharedStuffLib\SharedStuffLib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\musli\ArtHome\Projects\MemoryHackerLib\MemoryHackerLib;C:\Users\musli\ArtHome\Projects\SharedStuffLib\SharedStuffLib</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
