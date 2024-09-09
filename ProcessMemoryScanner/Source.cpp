@@ -3,6 +3,8 @@
 #include <easylogging++.h>
 #include <tclap/CmdLine.h>
 
+#pragma warning(disable: 6387)  // `Variable could be zero`
+
 #define PRODUCT_NAME L"ProcessMemoryScanner"
 #define FILE_NAME "addresses.txt"
 #define FILTERED_FILE_NAME "filtered_addresses.txt"
@@ -112,20 +114,30 @@ void OutputFile();
 
   Args:		ProcessMemoryScanner [<command>] <value> [<options>]
 
-                The following commands are available:
-                    search
-                    filter
-                    write
+              The following commands are available:
+                  search
+                  filter
+                  write
 
-                The following options are available:
-                    --process-id <process_id>
-                    --value-type   could be:
-                        int 
-                        long 
-                        float 
-                        double
-                    --driver-mode
+              The following options are available:
+                   --driver-mode
+                     Switch to use kernel driver to access specified process
 
+                   --value-type <int32 | int64 | float | double>
+                     (required)  The following types are avaiable: int32 | int64 | float |
+                     double
+
+                   --process-id <id>
+                     (required)
+
+                   --,  --ignore_rest
+                     Ignores the rest of the labeled arguments following this flag.
+
+                   --version
+                     Displays version information and exits.
+
+                   -h,  --help
+                     Displays usage information and exits.
   Returns:  0
                 If success.
             non-zero valie
@@ -212,7 +224,7 @@ void ParseArguments(
     TCLAP::CmdLine cmd(
         "`ProcessMemoryScanner` scans specified process for specified value.",
         ' ',
-        "1.0");
+        "1.0.0");
     TCLAP::UnlabeledValueArg<std::string> commandArg(
         "command", "The following commands are available: search | filter | write", TRUE,
         "search | filter | write",
