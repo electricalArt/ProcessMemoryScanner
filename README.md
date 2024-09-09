@@ -1,8 +1,10 @@
 # Title
 
-`ProcessMemoryScanner` is a Windows command-line utility to scan specified process for specified value. It searches for the process virtual memory addresses that point to specified value. Utlity prints found addresses to standard output and writes them to `addresses.txt`.  <br/>
+`ProcessMemoryScanner` is a Windows command-line utility to scan specified process for specified value. It searches for the process [virtual memory](https://learn.microsoft.com/en-us/windows-hardware/drivers/gettingstarted/virtual-address-spaces) addresses that point to specified value. Utlity prints found addresses to standard output and writes them to `addresses.txt`.  <br/>
 <br/>
-You can scan a process memory using user-mode or kernel-mode routines. To use kernel-mode routine you need `WdmMemoryReadWriteDriver` loaded.
+You can scan a process memory using [user mode](https://learn.microsoft.com/en-us/windows-hardware/drivers/gettingstarted/user-mode-and-kernel-mode) (default) or [kernel mode](https://learn.microsoft.com/en-us/windows-hardware/drivers/gettingstarted/user-mode-and-kernel-mode) routines. To use kernel-mode routine you should have `WdmMemoryReadWriteDriver` loaded.
+
+Kernel mode is useful when process is protected by, for example, game anti-cheat.
 
 ## Install
 
