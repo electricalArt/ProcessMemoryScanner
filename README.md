@@ -6,8 +6,11 @@ You can scan a process memory using user-mode or kernel-mode routines. To use ke
 
 ## Install
 
-```
-```
+To receive ready-to-use executable, take a look to [releases](https://github.com/elektrikArt/ProcessMemoryScanner/releases) page.
+
+### Build
+
+To build the executable by yourself, you should previously have [`MemoryHackerLib`](https://github.com/elektrikArt/MemoryHackerLib), [`SharedStuffLib`](https://github.com/elektrikArt/SharedStuffLib), [`easylogging++`](https://github.com/abumq/easyloggingpp) and [`tclap`](https://github.com/mirror/tclap) projects installed and linked. Then, use standard Visual Studio build routine.
 
 ## Usage
 
@@ -43,5 +46,3 @@ The following options are available:
 ## Contributing
 
 PRs are accepted.
-
-## License
