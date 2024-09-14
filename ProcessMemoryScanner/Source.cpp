@@ -13,7 +13,7 @@
 #define FILTERED_FILE_NAME "filtered_addresses.txt"
 #define BUFF_SIZE (SIZE_T)(10'000 * 4096)
 #define USER_MODE_VM_MAX_ADDRESS (SIZE_T)0x7FFF'FFFFFFFF
-#define THREADS_COUNT 1
+#define THREADS_COUNT 4
 
 INITIALIZE_EASYLOGGINGPP
 
@@ -234,7 +234,7 @@ int main(int argc, char* argv[])
             throw TCLAP::ArgException("Invalid command", "command");
         }
 
-        OutputFile();
+        OutputFile();  // It is a bottleneck in most cases.
     }
     catch (std::exception& ex) {
         std::cout << ex.what() << std::endl;
