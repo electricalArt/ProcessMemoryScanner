@@ -2,6 +2,7 @@
 #include "MemoryHackerLib.h"
 #include <easylogging++.h>
 #include <tclap/CmdLine.h>
+#include <vector>
 #include <thread>
 #include <mutex>
 
@@ -12,6 +13,7 @@
 #define FILTERED_FILE_NAME "filtered_addresses.txt"
 #define BUFF_SIZE (SIZE_T)(10'000 * 4096)
 #define USER_MODE_VM_MAX_ADDRESS (SIZE_T)0x7FFF'FFFFFFFF
+#define THREADS_COUNT 1
 
 INITIALIZE_EASYLOGGINGPP
 
@@ -20,6 +22,7 @@ INITIALIZE_EASYLOGGINGPP
 
   Summary:  Searches for process addresses what point to specified value.
             Found addresses will be written to the file.
+            The functions uses threads.
 
   Args:     _In_ HANDLE process,
                 The process where addresses are pointing.
@@ -38,7 +41,40 @@ void SearchProcessAddresses(
     _In_ DWORD valueSize,
     _In_ BOOL isDriverMode);
 
+/*F+F+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  Function: SearchProcessAddressesRange()
+
+  Summary:  Searches for process addresses in specified addresses range
+            what point to specified value. Found addresses will be
+            written to the file.
+
+  Args:     _In_ HANDLE process,
+                The process where addresses are pointing.
+            _In_ DWORD64 value,
+                Value that addresses should point.
+            _In_ DWORD valueSize
+                Value size.
+            _In_ SIZE_T startAddress
+                First address to search
+            _In_ SIZE_T rangeSize
+                Range size (in bytes).
+            _In_ FILE* pFile,
+                File to writing to.
+            _In_ BOOL isDriverMode
+                Specify if function should use kernel driver.
+
+  Returns:  void
+-----------------------------------------------------------------F-F*/
 void SearchProcessAddressesRange(
+    _In_ HANDLE process,
+    _In_ DWORD64 value,
+    _In_ DWORD valueSize,
+    _In_ SIZE_T startAddress,
+    _In_ SIZE_T rangeSize,
+    _In_ FILE* pFile,
+    _In_ BOOL isDriverMode);
+
+void SearchProcessAddressesConsecutivePages(
     _In_ HANDLE process,
     _In_ MEMORY_BASIC_INFORMATION memoryInfo,
     _In_ DWORD64 value,
@@ -290,6 +326,7 @@ DWORD64 ParseValue(
 
   Summary:  Searches for process addresses what point to specified value.
             Found addresses will be written to the file.
+            The functions uses threads.
 
   Args:     _In_ HANDLE process,
                 The process where addresses are pointing.
@@ -297,6 +334,8 @@ DWORD64 ParseValue(
                 Value that addresses should point.
             _In_ DWORD valueSize)
                 Value size.
+            _In_ BOOL isDriverMode
+                Specify if function should use kernel driver.
 
   Returns:  void
 -----------------------------------------------------------------F-F*/
@@ -306,15 +345,90 @@ void SearchProcessAddresses(
     _In_ DWORD valueSize,
     _In_ BOOL isDriverMode)
 {
-    MEMORY_BASIC_INFORMATION memoryInfo = { 0 };
-    SIZE_T i = 0x0;
     FILE* pFile;
 
     if (fopen_s(&pFile, FILE_NAME, "w")) {
         throw std::runtime_error("Failed to open output file");
     }
+#if THREADS_COUNT == 1
+    SearchProcessAddressesRange(
+        process,
+        value,
+        valueSize,
+        0,
+        USER_MODE_VM_MAX_ADDRESS,
+        pFile,
+        isDriverMode);
+#else
+    SIZE_T address = 0;
+    SIZE_T rangeSize = USER_MODE_VM_MAX_ADDRESS / THREADS_COUNT;
+    std::vector<std::jthread> threads;
+    DWORD threadsCreated = 0;
 
-    while (i < USER_MODE_VM_MAX_ADDRESS) {
+    // Probably last several bytes will not be searched. 
+    // It is extremely unlikely that user's wanted address
+    // will be missed because of this.
+    while (threadsCreated < THREADS_COUNT) {
+        LOG(INFO) << "Starting thread with start address: " << address;
+        threads.emplace_back(
+            SearchProcessAddressesRange,
+            process,
+            value,
+            valueSize,
+            address,
+            rangeSize,
+            pFile,
+            isDriverMode);
+        address += rangeSize;
+        threadsCreated++;
+    }
+
+    for (std::jthread& thread : threads) {
+        thread.join();
+    }
+#endif
+    if (pFile)
+        fclose(pFile);
+}
+
+/*F+F+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  Function: SearchProcessAddressesRange()
+
+  Summary:  Searches for process addresses in specified addresses range
+            what point to specified value. Found addresses will be
+            written to the file.
+
+  Args:     _In_ HANDLE process,
+                The process where addresses are pointing.
+            _In_ DWORD64 value,
+                Value that addresses should point.
+            _In_ DWORD valueSize
+                Value size.
+            _In_ SIZE_T startAddress
+                First address to search
+            _In_ SIZE_T rangeSize
+                Range size (in bytes).
+            _In_ FILE* pFile,
+                File to writing to.
+            _In_ BOOL isDriverMode
+                Specify if function should use kernel driver.
+
+  Returns:  void
+-----------------------------------------------------------------F-F*/
+void SearchProcessAddressesRange(
+    _In_ HANDLE process,
+    _In_ DWORD64 value,
+    _In_ DWORD valueSize,
+    _In_ SIZE_T startAddress,
+    _In_ SIZE_T rangeSize,
+    _In_ FILE* pFile,
+    _In_ BOOL isDriverMode)
+{
+    MEMORY_BASIC_INFORMATION memoryInfo = { 0 };
+    SIZE_T i;
+
+
+    for (i = startAddress; i < startAddress + rangeSize; i += memoryInfo.RegionSize) {
         if (VirtualQueryEx(
                 process,
                 (LPCVOID)i,
@@ -324,10 +438,10 @@ void SearchProcessAddresses(
         }
         if (memoryInfo.State == MEM_COMMIT) {
             if (memoryInfo.RegionSize >= BUFF_SIZE) {
-                LOG(WARNING) << "Found pages range with too big size: " << memoryInfo.RegionSize << ". Skipping it";
+                //LOG(WARNING) << "Found pages range with too big size: " << memoryInfo.RegionSize << ". Skipping it";
             }
             else {
-                SearchProcessAddressesRange(
+                SearchProcessAddressesConsecutivePages(
                     process,
                     memoryInfo,
                     value,
@@ -336,14 +450,10 @@ void SearchProcessAddresses(
                     pFile);
             }
         }
-        i += memoryInfo.RegionSize;
     }
-
-    if (pFile)
-        fclose(pFile);
 }
 
-void SearchProcessAddressesRange(
+void SearchProcessAddressesConsecutivePages(
     _In_ HANDLE process,
     _In_ MEMORY_BASIC_INFORMATION memoryInfo,
     _In_ DWORD64 value,
@@ -357,13 +467,14 @@ void SearchProcessAddressesRange(
         MEM_COMMIT | MEM_RESERVE,
         PAGE_READWRITE);
     BOOL result = FALSE;
+    static std::mutex mutex;
     if (buff == NULL) {
         throw std::runtime_error("Not enough memory");
     }
 
-    LOG(INFO) << "Start of range:" << memoryInfo.BaseAddress;
-    LOG(INFO) << "End of range:" << std::dec << (SIZE_T)memoryInfo.BaseAddress + memoryInfo.RegionSize;
-    LOG(INFO) << "Size of range:" << memoryInfo.BaseAddress;
+    //LOG(INFO) << "Start of range:" << memoryInfo.BaseAddress;
+    //LOG(INFO) << "End of range:" << std::dec << (SIZE_T)memoryInfo.BaseAddress + memoryInfo.RegionSize;
+    //LOG(INFO) << "Size of range:" << memoryInfo.BaseAddress;
 
     if (isDriverMode == FALSE) {
         result = ReadProcessMemory(
@@ -383,11 +494,12 @@ void SearchProcessAddressesRange(
             memoryInfo.RegionSize,
             NULL);
     }
-    LOG(INFO) << (result ? "Reading is successed" : "Reading is failed");
+    //LOG(INFO) << (result ? "Reading is successed" : "Reading is failed");
     if (result) {
         for (SIZE_T buff_i = 0x0; buff_i < memoryInfo.RegionSize; buff_i += valueSize) {
             LOG_IF(buff_i >= BUFF_SIZE, FATAL) << "Buff length is not enough";
             if (memcmp(buff + buff_i, &value, valueSize) == 0) {
+                std::lock_guard<std::mutex> lock(mutex);                                   // lock guard
                 fprintf(pFile, "%p\n", (PVOID)((SIZE_T)memoryInfo.BaseAddress + buff_i));
             }
         }
