@@ -2,6 +2,8 @@
 #include "MemoryHackerLib.h"
 #include <easylogging++.h>
 #include <tclap/CmdLine.h>
+#include <thread>
+#include <mutex>
 
 #pragma warning(disable: 6387)  // `Variable could be zero`
 

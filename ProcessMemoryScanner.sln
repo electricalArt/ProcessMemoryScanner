@@ -9,19 +9,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SharedStuffLib", "..\Shared
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MemoryHackerLib", "..\MemoryHackerLib\MemoryHackerLib\MemoryHackerLib.vcxproj", "{516BFD95-A3CB-435E-8436-CC172A77AA80}"
 EndProject
-Project("{911E67C6-3D85-4FCE-B560-20A9C3E3FF48}") = "FixedMemoryApplication", "..\FixedMemoryApplication\x64\Release\FixedMemoryApplication.exe", "{1D242DE2-62DF-4AF2-A451-D82AD7ED444C}"
-	ProjectSection(DebuggerProjectSystem) = preProject
-		PortSupplier = 00000000-0000-0000-0000-000000000000
-		Executable = C:\Users\musli\ArtHome\Projects\FixedMemoryApplication\x64\Release\FixedMemoryApplication.exe
-		RemoteMachine = FERMA
-		StartingDirectory = C:\Users\musli\ArtHome\Projects\FixedMemoryApplication\x64\Release
-		Environment = Default
-		LaunchingEngine = 00000000-0000-0000-0000-000000000000
-		UseLegacyDebugEngines = No
-		LaunchSQLEngine = No
-		AttachLaunchAction = No
-		IORedirection = Auto
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FixedMemoryApplication", "..\FixedMemoryApplication\FixedMemoryApplication\FixedMemoryApplication.vcxproj", "{1C362537-FB5D-4918-B24B-5AE83875708E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -55,10 +43,14 @@ Global
 		{516BFD95-A3CB-435E-8436-CC172A77AA80}.Release|x64.Build.0 = Release|x64
 		{516BFD95-A3CB-435E-8436-CC172A77AA80}.Release|x86.ActiveCfg = Release|Win32
 		{516BFD95-A3CB-435E-8436-CC172A77AA80}.Release|x86.Build.0 = Release|Win32
-		{1D242DE2-62DF-4AF2-A451-D82AD7ED444C}.Debug|x64.ActiveCfg = Release|x64
-		{1D242DE2-62DF-4AF2-A451-D82AD7ED444C}.Debug|x86.ActiveCfg = Release|x64
-		{1D242DE2-62DF-4AF2-A451-D82AD7ED444C}.Release|x64.ActiveCfg = Release|x64
-		{1D242DE2-62DF-4AF2-A451-D82AD7ED444C}.Release|x86.ActiveCfg = Release|x64
+		{1C362537-FB5D-4918-B24B-5AE83875708E}.Debug|x64.ActiveCfg = Debug|x64
+		{1C362537-FB5D-4918-B24B-5AE83875708E}.Debug|x64.Build.0 = Debug|x64
+		{1C362537-FB5D-4918-B24B-5AE83875708E}.Debug|x86.ActiveCfg = Debug|Win32
+		{1C362537-FB5D-4918-B24B-5AE83875708E}.Debug|x86.Build.0 = Debug|Win32
+		{1C362537-FB5D-4918-B24B-5AE83875708E}.Release|x64.ActiveCfg = Release|x64
+		{1C362537-FB5D-4918-B24B-5AE83875708E}.Release|x64.Build.0 = Release|x64
+		{1C362537-FB5D-4918-B24B-5AE83875708E}.Release|x86.ActiveCfg = Release|Win32
+		{1C362537-FB5D-4918-B24B-5AE83875708E}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

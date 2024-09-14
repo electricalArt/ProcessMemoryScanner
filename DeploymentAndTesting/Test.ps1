@@ -1,21 +1,40 @@
-$Value = 1499
-$ProcessId = 14992
+$Global:LastExitCode = 0
+$Value = 1666
 $ValueType = "int32"
-#$OutputFile = ".\addresses.txt"
 
+$TargetProcessId = $null
+
+function StartTargetProcess() {
+    Write-Host
+    Write-Host "StartProcess()"
+    Write-Host
+    $script:TargetProcessId = `
+        (Start-Process .\FixedMemoryApplication.exe `
+            -ArgumentList @($ValueType, $Value) -PassThru
+        ).Id
+    if ($LastExitCode) {
+        throw $LastExitCode
+    }
+    Start-Sleep 0.05
+}
 function TestSearch() {
-    param(
-        $Value
-    )
-    .\ProcessMemoryScanner.exe search $Value --process-id $ProcessId --value-type $ValueType
+    .\ProcessMemoryScanner.exe search $Value --process-id $TargetProcessId --value-type $ValueType
 }
 function TestFilter() {
-    .\ProcessMemoryScanner.exe filter ($Value - 1) --process-id $ProcessId --value-type $ValueType
+    .\ProcessMemoryScanner.exe filter ($Value - 1) --process-id $TargetProcessId --value-type $ValueType
 }
 function TestWrite() {
-    .\ProcessMemoryScanner.exe write 1000 --process-id $ProcessId --value-type $ValueType
+    .\ProcessMemoryScanner.exe write 1000 --process-id $TargetProcessId --value-type $ValueType
+}
+function StopTargetProcess() {
+    Write-Host
+    Write-Host "StopTargetProcess()"
+    Write-Host
+    Stop-Process -Id $TargetProcessId
 }
 
-TestSearch -Value $Value
+StartTargetProcess
+TestSearch
 #TestFilter
 #TestWrite
+StopTargetProcess
